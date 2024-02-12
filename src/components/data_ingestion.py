@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from src.logger import logging
 from src.exception import CustomException
-from src.utils import get_data_mongodb
+from src.utils import import_data_from_mongo
 from src.components.data_transformation import DataTransformationConfig
 from src.components.data_transformation import DataTransformation
 from src.components.model_train import ModelTrainerConfig
@@ -28,11 +28,10 @@ class DataIngestion:
     def initiate_data_ingestion(self):
         logging.info('Data ingestion has started')
         try:
-            # df: pd.DataFrame=get_data_mongodb(
-            #     database='PROJECT',collection_db='CementStrength'
-            # )
-            df=pd.read_csv('Notebook/data/cement_data.csv')
-            logging.info('data read completed')
+            df: pd.DataFrame=import_data_from_mongo('PROJECT', 'CementStrength')
+
+            # df=pd.read_csv('Notebook/data/cement_data.csv')
+            # logging.info('data read completed')
 
             os.makedirs(
                os.path.dirname(self.ingestion_config.raw_data_path),exist_ok=True

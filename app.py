@@ -3,7 +3,7 @@ from src.exception import CustomException
 from src.logger import logging as lg
 
 from src.pipline.train_pipline import TrainPipline
-from src.pipline.pradiction_pipline import PradictionPipline
+from src.pipline.pradiction_pipline import PredictionPipeline
 import os,sys
 
 
@@ -25,20 +25,20 @@ def train():
         raise CustomException(sys,e)    
             
 
-@app.route("/predict",)
+@app.route("/predict", methods = ['POST', 'GET'])
 def predict():
     try:
         if request.method == "POST":
             data = dict(request.form.items())
             print(data)
             return jsonify("done")
+    
    
 
 
     except Exception as e:
         lg.info('error occured in pradiction')
         raise CustomException(sys,e) 
-
 @app.route('/upload', methods=['POST', 'GET'])
 def upload():
     
@@ -46,7 +46,7 @@ def upload():
 
 
         if request.method == 'POST':
-            prediction_pipeline = PradictionPipline(request=request)
+            prediction_pipeline = PredictionPipeline(request)
             prediction_file_detail = prediction_pipeline.run_pipeline()
 
             lg.info("prediction completed. Downloading prediction file.")
@@ -59,7 +59,6 @@ def upload():
             return render_template('upload_file.html')
     except Exception as e:
         raise CustomException(e,sys)
-    
     
 
 

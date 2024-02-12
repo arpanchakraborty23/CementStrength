@@ -44,11 +44,11 @@ class DataTransformation:
             Target_column='Concrete compressive strength(MPa, megapascals) '
 
             # train data
-            input_fetures_train_df=train_df.drop(columns=[Target_column],axis=1) # x_train
+            input_fetures_train_df=train_df.drop(columns=[Target_column,'_id'],axis=1) # x_train
             target_features_train_df=train_df[Target_column] # y_train
 
             # test data
-            input_fetures_test_df=test_df.drop(columns=[Target_column],axis=1) #x_test
+            input_fetures_test_df=test_df.drop(columns=[Target_column,'_id'],axis=1) #x_test
             target_features_test_df=test_df[Target_column] # y_test
 
             logging.info(f'input_fetures_train_df : {input_fetures_train_df.head().to_string()}')

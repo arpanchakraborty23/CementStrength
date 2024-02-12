@@ -10,17 +10,27 @@ from pymongo import MongoClient
 from src.logger import logging
 from src.exception import CustomException
 
-def get_data_mongodb(collection_db,database):
-    client=MongoClient(os.getenv('mongodb+srv://www588650:arpan@cluster0.xyculx8.mongodb.net/?retryWrites=true&w=majority'))
-    collection=client[database][collection_db]
-    df=pd.DataFrame(list(collection.find()))
+def import_data_from_mongo(database_name, collection_name):
+    # Connect to MongoDB
+    try:
+        client = MongoClient("mongodb+srv://www588650:arpan@cluster0.xyculx8.mongodb.net/?retryWrites=true&w=majority")  # Update with your MongoDB connection string
 
-    if "_id" in df.columns.to_list():
-        df=df.drop(columns=("_id"),axis=1)
+        # Select the database and collection
+        db = client[database_name]
+        collection = db[collection_name]
 
-    df.replace({'na',np.nan},inplace=True)   
+        # Query to retrieve data from the collection
+        data = collection.find()
 
-    return df 
+        df = pd.DataFrame(list(collection.find()))
+
+    
+
+        
+        return df
+    except Exception as e :
+        logging.info('error in Mongo db')
+        raise CustomException(sys,e)     
 
 
 def save_object(file_path, obj):

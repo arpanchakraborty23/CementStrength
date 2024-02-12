@@ -11,16 +11,21 @@ from flask import Flask,request
 from dataclasses import dataclass
 
 @dataclass
-class PradictionPiplineConfig:
-    pradiction_file_path=os.path.join('pradiction','pradiction.csv')
+class PredictionFileDetail:
+    prediction_output_dirname: str = "predictions"
+    prediction_file_name:str =  "predicted_file.csv"
+    prediction_file_path:str = os.path.join(prediction_output_dirname,prediction_file_name)
 
 
-class PradictionPipline:
-    def __init__(self,request:request):
-        self.request= request
-        self.pradiction_config=PradictionPiplineConfig()
 
-    def save_input_files(self):
+class PredictionPipeline:
+    def __init__(self, request: request):
+
+        self.request = request
+        self.prediction_file_detail = PredictionFileDetail()
+
+
+    def save_input_files(self)-> str:
 
         """
             Method Name :   save_input_files
@@ -30,86 +35,98 @@ class PradictionPipline:
             On Failure  :   Write an exception log and then raise an exception
             
             Version     :   1.2
+            Revisions   :   moved setup to cloud
         """
+
         try:
-            # input file location
-            input_pradiction_file='pred_artifacts'
-            os.makedirs(input_pradiction_file,exist_ok=True)
+            logging.info('input file save process started')
+            pred_file_input_dir = "prediction_artifacts"
+            os.makedirs(pred_file_input_dir, exist_ok=True)
+            logging.info('input file save dir')
 
-            input_csv_file=self.request.files['file']
-            pred_file_path=os.path.join(input_pradiction_file,input_csv_file)
+            input_csv_file = self.request.files['file']
+            logging.info('input file save done')
 
-            input_csv_file.save(pred_file_path)
+            pred_file_path = os.path.join(pred_file_input_dir,'input_file.csv')
             
-            return pred_file_path
+            
+            input_csv_file.save(pred_file_path)
 
+            logging.info('exist from input files')
+
+            return pred_file_path
         except Exception as e:
-            logging.info('error in save input file')
+            logging.info('error in input file save ')
+
             raise CustomException(e,sys)
 
-    def pradict(self,features):
-        try:
-            model_path=download_model(
-                bucket_name='ineuron-test-bucket-123',
-                bucket_file_name='model.pkl',
-                dest_file_name='model.pkl'
-            )
-            model= load_object(file_path=model_path)
+    def predict(self, features):
+            try:
+                logging.info('aws bucket dir')
 
-            preds=model.pradict(features)
+                model_path = download_model(
+                    bucket_name="ineuron-test-bucket-123",
+                    bucket_file_name="model.pkl",
+                    dest_file_name="model.pkl",
+                )
 
-        except Exception as e:
-            raise CustomException(e, sys)
+                model = load_object(file_path=model_path)
 
-    def pradicted_df(self,input_dataFrame_path:pd.DataFrame):
+                preds = model.predict(features)
+
+                return preds
+
+            except Exception as e:
+                logging.info('eror in aws bucket dir')
+                raise CustomException(e, sys)
+        
+    def get_predicted_dataframe(self, input_dataframe_path:pd.DataFrame):
+
         """
-            Method Name :   predicted_dataframe
+            Method Name :   get_predicted_dataframe
             Description :   this method returns the dataframw with a new column containing predictions
 
             
             Output      :   predicted dataframe
             On Failure  :   Write an exception log and then raise an exception
-        """ 
+            
+            Version     :   1.2
+            Revisions   :   moved setup to cloud
+        """
+   
         try:
-            pradiction_col_name :str ='class'
+            logging.info('enter in  get_predicted_dataframe ')
+            prediction_column_name : str = "class"
+            input_dataframe: pd.DataFrame = pd.read_csv(input_dataframe_path)
+            
+            
+            predictions = self.predict(input_dataframe)
+            input_dataframe[prediction_column_name] = [pred for pred in predictions]
+            target_column_mapping = {0:'neg', 1:'pos'}
 
-            input_dataFrame: pd.DataFrame=pd.read_csv(input_dataFrame_path)
-            pradictions=self.predict(input_dataFrame)
-            input_dataFrame[pradiction_col_name]=[pred for pred in pradictions]
-
-            target_col_mapping={0:'neg',1:'pos'}
-
-            input_dataFrame[pradiction_col_name]=input_dataFrame[pradiction_col_name].map(target_col_mapping)
-
-            os.makedirs(self.pradiction_config.pradiction_output_dir,exist_ok=True)
-            input_dataFrame.to_csv(self.pradiction_config.pradiction_file_path,index=False)
-
-
+            input_dataframe[prediction_column_name] = input_dataframe[prediction_column_name].map(target_column_mapping)
+            
+            os.makedirs( self.prediction_file_detail.prediction_output_dirname, exist_ok= True)
+            input_dataframe.to_csv(self.prediction_file_detail.prediction_file_path, index= False)
             logging.info("predictions completed. ")
 
 
 
         except Exception as e:
+            logging.info('error get_predicted_dataframe ')
             raise CustomException(e, sys) from e
+        
+
+        
+    def run_pipeline(self):
+        try:
+            input_csv_path = self.save_input_files()
+            self.get_predicted_dataframe(input_csv_path)
+
+            return self.prediction_file_detail
+
+
+        except Exception as e:
+            logging.info('error run pipline ')
+            raise CustomException(e,sys)
             
-
-        def run_pipeline(self):
-            try:
-                input_csv_path=self.save_input_files()
-                pradiction_result=self.pradicted_df(input_csv_path)
-
-                return pradiction_result
-
-                
-
-
-
-            except Exception as e:
-                logging.info('error in run pipline')
-                raise CustomException(e, sys) from e        
-
-    
-
-
-
-
