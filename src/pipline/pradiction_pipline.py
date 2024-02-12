@@ -1,4 +1,4 @@
-import os,sys
+import os,sys,shutil
 import pandas as pd
 import numpy as np
 
@@ -6,7 +6,7 @@ from src.logger import logging
 from src.exception import CustomException
 from src.utils import load_object,upload_file,download_model
 
-from flask import request
+from flask import Flask,request
 
 from dataclasses import dataclass
 
@@ -37,7 +37,7 @@ class PradictionPipline:
             os.makedirs(input_pradiction_file,exist_ok=True)
 
             input_csv_file=self.request.files['file']
-            pred_file_path=os.path.join(pred_file_path,input_csv_file)
+            pred_file_path=os.path.join(input_pradiction_file,input_csv_file)
 
             input_csv_file.save(pred_file_path)
             
@@ -50,7 +50,7 @@ class PradictionPipline:
     def pradict(self,features):
         try:
             model_path=download_model(
-                bucket_name='AC',
+                bucket_name='ineuron-test-bucket-123',
                 bucket_file_name='model.pkl',
                 dest_file_name='model.pkl'
             )
@@ -71,10 +71,11 @@ class PradictionPipline:
             On Failure  :   Write an exception log and then raise an exception
         """ 
         try:
-            pradiction_col_name='class'
-            input_dataFrame=pd.DataFrame(input_dataFrame_path)
-            pradictions=self.pradict(pradiction_col_name)
-            input_dataFrame[pradiction_col_name]=[preds for pred in pradictions]
+            pradiction_col_name :str ='class'
+
+            input_dataFrame: pd.DataFrame=pd.read_csv(input_dataFrame_path)
+            pradictions=self.predict(input_dataFrame)
+            input_dataFrame[pradiction_col_name]=[pred for pred in pradictions]
 
             target_col_mapping={0:'neg',1:'pos'}
 
@@ -92,12 +93,12 @@ class PradictionPipline:
             raise CustomException(e, sys) from e
             
 
-        def run_pipline(self):
+        def run_pipeline(self):
             try:
                 input_csv_path=self.save_input_files()
-                self.pradicted_df(input_csv_path)
+                pradiction_result=self.pradicted_df(input_csv_path)
 
-                return self.pradiction_config
+                return pradiction_result
 
                 
 

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, send_file
 from src.exception import CustomException
 from src.logger import logging as lg
+
 from src.pipline.train_pipline import TrainPipline
 from src.pipline.pradiction_pipline import PradictionPipline
 import os,sys
@@ -24,40 +25,42 @@ def train():
         raise CustomException(sys,e)    
             
 
-@app.route('/pradict',methods=['GET','POST'])
-def pradict():
+@app.route("/predict",)
+def predict():
     try:
-        if request.method=='POST':
-            data=dict(request.form.items())
+        if request.method == "POST":
+            data = dict(request.form.items())
             print(data)
-            return jsonify('done')
+            return jsonify("done")
+   
 
 
     except Exception as e:
+        lg.info('error occured in pradiction')
         raise CustomException(sys,e) 
 
-@app.route('/upload',methods=['GET','POST'])
+@app.route('/upload', methods=['POST', 'GET'])
 def upload():
+    
     try:
 
-        if request.method=='POST':
-            pradiction_pipline=PradictionPipline(request)
-            pradiction_file_detail=pradiction_pipline.run_pipline()
 
-            lg.info('prediction completed. Downloading prediction file.')
-            return send_file(pradiction_file_detail.pradiction_file_path,
-            download_name=pradiction_file_detail.pradiction_file_name,
-            as_attachment=True
+        if request.method == 'POST':
+            prediction_pipeline = PradictionPipline(request=request)
+            prediction_file_detail = prediction_pipeline.run_pipeline()
 
-            )
+            lg.info("prediction completed. Downloading prediction file.")
+            return send_file(prediction_file_detail.prediction_file_path,
+                            download_name= prediction_file_detail.prediction_file_name,
+                            as_attachment= True)
 
 
         else:
-            return render_template('templates/upload_file.upload_file.html')
-
+            return render_template('upload_file.html')
     except Exception as e:
-        lg.info('error occured in upload')        
-
+        raise CustomException(e,sys)
+    
+    
 
 
 if __name__ == "__main__":

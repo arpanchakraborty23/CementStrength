@@ -16,15 +16,14 @@ class TrainPipline:
         logging.info('run  pippline has started')
         try:
             train_path,test_path=self.data_ingestion.initiate_data_ingestion()
-            (
-                train_arr,test_arr,preprocess_file)=self.data_transformation.initiate_data_transformation(
-                    train_file_path=train_path,test_file_path=test_path,preprocess_file=preprocess_file_path
-                )
+            
+            train_arr,test_arr,preprocess=self.data_transformation.initiate_data_transformation(
+                    train_file_path=train_path,test_file_path=test_path)
             
             r2_score=self.model_train.initate_model_training(
                 train_array=train_arr,test_array=test_arr,
             )
-            print("training completed. Trained model score : ", r2_square)
+            print("training completed. Trained model score : ", r2_score)
 
         except Exception as e:
                 logging.info('error in train pipline')
